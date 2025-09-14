@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ChromaDB Express Tutorial</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .section {
+        margin-bottom: 30px;
+      }
+      input,
+      textarea,
+      button {
+        display: block;
+        margin: 10px 0;
+        padding: 8px;
+        width: 100%;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      .result {
+        background: #f5f5f5;
+        padding: 15px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ChromaDB dengan Express.js</h1>
+
+    <div class="section">
+      <h2>Buat Collection</h2>
+      <input type="text" id="collectionName" placeholder="Nama Collection" />
+      <button onclick="createCollection()">Buat Collection</button>
+      <div id="collectionResult" class="result"></div>
+    </div>
+
+    <div class="section">
+      <h2>Tambah Dokumen</h2>
+      <input type="text" id="docCollection" placeholder="Nama Collection" />
+      <textarea id="documents" placeholder='Dokumen (format: ["doc1", "doc2"])'></textarea>
+      <button onclick="addDocuments()">Tambah Dokumen</button>
+      <div id="docResult" class="result"></div>
+    </div>
+
+    <div class="section">
+      <h2>Query Dokumen</h2>
+      <input type="text" id="queryCollection" placeholder="Nama Collection" />
+      <input type="text" id="queryText" placeholder="Teks Query" />
+      <button onclick="queryDocuments()">Query</button>
+      <div id="queryResult" class="result"></div>
+    </div>
+
+    <script>
+      async function createCollection() {
+        const name = document.getElementById("collectionName").value;
+        const result = document.getElementById("collectionResult");
+
+        try {
+          const response = await fetch("/api/chroma/collections", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name }),
+          });
+          const data = await response.json();
+          result.innerHTML = JSON.stringify(data, null, 2);
+        } catch (error) {
+          result.innerHTML = "Error: " + error.message;
+        }
+      }
+
+      async function addDocuments() {
+        const collection = document.getElementById("docCollection").value;
+        const documents = JSON.parse(document.getElementById("documents").value);
+        const result = document.getElementById("docResult");
+
+        try {
+          const response = await fetch(`/api/chroma/collections/${collection}/documents`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              documents,
+              ids: documents.map((_, i) => `doc-${Date.now()}-${i}`),
+              metadatas: documents.map((doc) => ({ added: new Date().toISOString() })),
+            }),
+          });
+          const data = await response.json();
+          result.innerHTML = JSON.stringify(data, null, 2);
+        } catch (error) {
+          result.innerHTML = "Error: " + error.message;
+        }
+      }
+
+      async function queryDocuments() {
+        const collection = document.getElementById("queryCollection").value;
+        const queryText = document.getElementById("queryText").value;
+        const result = document.getElementById("queryResult");
+
+        try {
+          const response = await fetch(`/api/chroma/collections/${collection}/query`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              queryTexts: [queryText],
+              nResults: 5,
+            }),
+          });
+          const data = await response.json();
+          result.innerHTML = JSON.stringify(data, null, 2);
+        } catch (error) {
+          result.innerHTML = "Error: " + error.message;
+        }
+      }
+    </script>
+  </body>
+</html>
